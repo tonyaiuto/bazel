@@ -1,2 +1,2 @@
 # bazel
-Private hacking on Bazel 
+Private hacking on Bazel.
