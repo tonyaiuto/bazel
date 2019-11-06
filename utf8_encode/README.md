@@ -1,5 +1,7 @@
 # Improper encoding to UTF-8 on ctx.actions.write
 
+Filed as: https://github.com/bazelbuild/bazel/issues/10174
+
 ## Repo
 
 ```
