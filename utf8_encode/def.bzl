@@ -8,10 +8,16 @@ LicenseInfo = provider(
 
 def _license_impl(ctx):
     l = LicenseInfo(copyright_notice = ctx.attr.copyright_notice)
-    print(l)
+    # if the length is 28, then we are seeing 2 octets for the
+    # copyright character, which would mean it is already unicode.
+    content = [
+        ctx.attr.copyright_notice,
+        'length: %d' % len(ctx.attr.copyright_notice),
+        'expected: 27\n',
+    ]
     ctx.actions.write(
         output = ctx.outputs.out,
-        content = '%s\n' % ctx.attr.copyright_notice,
+        content = '\n'.join(content)
     )
     return [l]
 
