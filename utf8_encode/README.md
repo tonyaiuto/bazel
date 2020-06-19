@@ -6,6 +6,11 @@ Filed as: https://github.com/bazelbuild/bazel/issues/10174
 
 ```
 bazel build :*
+more bazel-bin/*.txt
+```
+
+## Repo for ctx.actions.write issue
+```
 $ od -c -t x1 bazel-bin/attr.txt
 ```
 
