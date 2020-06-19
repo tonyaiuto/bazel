@@ -1,33 +1,62 @@
 """Demonstrate encoding mismatch from utf-8 encoded BUILD files."""
 
-LicenseInfo = provider(
-    fields = {
-        "copyright_notice": "Short copyright notice",
+def _write_attribute_impl(ctx):
+    content = [
+        '|%s|\n' % ctx.attr.text,
+        'starlark length: %d\n' % len(ctx.attr.text),
+        'n_chars: %d\n' % ctx.attr.n_chars,
+        'n_utf8_bytes: %d\n' % ctx.attr.n_utf8_bytes,
+    ]
+    if len(ctx.attr.text) == ctx.attr.n_chars:
+      content.append('# Unexpeted: BUILD file is parsed as UTF-8\n')
+    elif len(ctx.attr.text) == ctx.attr.n_utf8_bytes:
+      content.append('# Expected: BUILD file is parsed as Latin1\n')
+    else:
+      content.append('# FAIL: Unexpected Starlark length\n')
+    ctx.actions.write(
+        output = ctx.outputs.out,
+        content = ''.join(content)
+    )
+    return []
+
+write_attribute = rule(
+    implementation = _write_attribute_impl,
+    attrs = {
+        "text": attr.string(mandatory = True),
+        "n_chars": attr.int(doc="expected length in visible characters"),
+        "n_utf8_bytes": attr.int(doc="expected length of UTF-8 encoding"),
+        "out": attr.output(),
     },
 )
 
-def _license_impl(ctx):
-    l = LicenseInfo(copyright_notice = ctx.attr.copyright_notice)
-    # if the length is 28, then we are seeing 2 octets for the
-    # copyright character, which would mean it is already unicode.
+def _write_filename_impl(ctx):
+    if len(ctx.attr.file) != 1:
+        fail('expected exactly 1 file for file. got %d' % len(ctx.attr.file))
+    name = ctx.attr.file[0].label.name
     content = [
-        ctx.attr.copyright_notice,
-        'length: %d' % len(ctx.attr.copyright_notice),
-        'expected: 27\n',
+        '|%s|\n' % name,
+        'starlark length: %d\n' % len(name),
+        'n_chars: %d\n' % ctx.attr.n_chars,
+        'n_utf8_bytes: %d\n' % ctx.attr.n_utf8_bytes,
     ]
+    if len(name) == ctx.attr.n_chars:
+      content.append('# Unexpected: glob targets parsed as UTF-8\n')
+    elif len(name) == ctx.attr.n_utf8_bytes:
+      content.append('# Expected: glob targets parsed as Latin1\n')
+    else:
+      content.append('# FAIL: Unexpected Starlark length\n')
     ctx.actions.write(
         output = ctx.outputs.out,
-        content = '\n'.join(content)
+        content = ''.join(content)
     )
-    return [l]
+    return []
 
-license = rule(
-    implementation = _license_impl,
+write_filename = rule(
+    implementation = _write_filename_impl,
     attrs = {
-        "copyright_notice": attr.string(
-            mandatory = True,
-            doc = "Copyright notice.",
-        ),
-        "out": attr.output(mandatory = True),
+        "file": attr.label_list(allow_files=True),
+        "n_chars": attr.int(doc="expected length in visible characters"),
+        "n_utf8_bytes": attr.int(doc="expected length of UTF-8 encoding"),
+        "out": attr.output(),
     },
 )
