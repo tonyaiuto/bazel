@@ -5,64 +5,41 @@ Filed as: https://github.com/bazelbuild/bazel/issues/10174
 ## Repo
 
 ```
-bazel build :example
-od -c -t x1 bazel-bin/copyright.txt
+bazel build :*
+$ od -c -t x1 bazel-bin/attr.txt
 ```
 
 The result is
 ```
-0000000   C   o   p   y   r   i   g   h   t     303 202 302 251       2
-         43  6f  70  79  72  69  67  68  74  20  c3  82  c2  a9  20  32
-0000020   0   1   9       T   o   n   y       A   i   u   t   o  \n
-         30  31  39  20  54  6f  6e  79  20  41  69  75  74  6f  0a
-```
-
-But it should be:
+0000000   |   A 303 202 302 251 303 244 302 270 302 226 303 260 302 237
+         7c  41  c3  82  c2  a9  c3  a4  c2  b8  c2  96  c3  b0  c2  9f
+0000020 302 230 302 277   |  \n   s   t   a   r   l   a   r   k       l
+         c2  98  c2  bf  7c  0a  73  74  61  72  6c  61  72  6b  20  6c
+0000040   ...
 
 ```
-0000000   C   o   p   y   r   i   g   h   t     302 251       2   0   1
-         43  6f  70  79  72  69  67  68  74  20  c2  a9  20  32  30  31
-0000020   9       T   o   n   y       A   i   u   t   o  \n
-         39  20  54  6f  6e  79  20  41  69  75  74  6f  0a
-0000035
+
+Which shows a double encoding. It should begin with
+
+```
+# U+41, U+2117, U+4E16, U+1F63F
+0000000   A 302 251 344 270 226 360 237 230 277 ...
 ```
 
 ## Analysis
 
-The iso8859-Latin-1 copyright symbol is 0xA9. The UTF-8 encoding of that
-is the two bytes [c2, a9]. What we see in the output file is clearly
-those two bytes again encoded as utf-8.
-
-The BUILD file is in UTF-8 format:
-
-```
-grep copyright_notice BUILD | od -c -t x1
-0000000                   c   o   p   y   r   i   g   h   t   _   n   o
-         20  20  20  20  63  6f  70  79  72  69  67  68  74  5f  6e  6f
-0000020   t   i   c   e       =       "   C   o   p   y   r   i   g   h
-         74  69  63  65  20  3d  20  22  43  6f  70  79  72  69  67  68
-0000040   t     302 251       2   0   1   9       T   o   n   y       A
-         74  20  c2  a9  20  32  30  31  39  20  54  6f  6e  79  20  41
-0000060   i   u   t   o   "   ,  \n
-         69  75  74  6f  22  2c  0a
-0000067
-```
-
-We can see the signature of the encoded copyright symbol as 302 251.
-
-It would seem that
--   the BUILD file is parsed as a stream of octets, each one becoming a
-    distinct character [0xc2, 0xa9].
--   write() presumes the file should be UTF-8 encoded and converts the 2
-    characters into the 4 need for their UTF-8 representation.
+Known problem. Bazel parses input as Latin1. ctx.actions.write, is
+taking that end encoding as UTF-8.
 
 ## Potential fixes
 
-### BUILD files are UTF-8
+### Parse BUILD files are UTF-8
 
--   Pro: Easy to implement and understand.
--   Con: A breaking change, but probably little used. (Reasoning: encodings are
+-   Pro: Easy to understand.
+-   Con: Invasive change.
+-   Con: A breaking change, but probably not an issue. (Reasoning: encodings are
     broken anyway, so who could be using anything beyond ASCII successfully)
+
 
 ### Allow BUILD files to specify an encoding
 
