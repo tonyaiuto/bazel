@@ -1,0 +1,38 @@
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_library.bzl", "py_library")
+load("@rules_python//python/zipapp:py_zipapp_binary.bzl", "py_zipapp_binary")
+
+py_library(
+    name = "nifty_lib",
+    srcs = [
+        "__init__.py",
+        "helper.py",
+    ],
+)
+
+py_binary(
+    name = "nifty_tool_bin",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = [":nifty_lib"],
+)
+
+py_zipapp_binary(
+    name = "nifty_tool",
+    binary = ":nifty_tool_bin",
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "nifty_tool2_bin",
+    srcs = ["main.py"],
+    main = "main.py",
+    imports = [".."],
+    deps = [":nifty_lib"],
+)
+
+py_zipapp_binary(
+    name = "nifty_tool2",
+    binary = ":nifty_tool2_bin",
+    visibility = ["//visibility:public"],
+)

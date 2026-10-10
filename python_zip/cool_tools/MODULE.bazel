@@ -1,0 +1,6 @@
+module(name = "cool_tools")
+
+bazel_dep(name = "rules_python", version = "2.4.1")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(python_version = "3.12")
