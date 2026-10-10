@@ -1,0 +1,8 @@
+module(name = "aiuto_bazel_samples")
+
+bazel_dep(name = "rules_python", version = "2.4.1")
+bazel_dep(name = "protobuf", version = "31.1")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version_file = "//:.python-version")
+python.toolchain(python_version = "3.12")
